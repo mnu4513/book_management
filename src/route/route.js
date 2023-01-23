@@ -20,8 +20,8 @@ route.delete('/books/:bookId',bookCtrl.bookDeleted)
 
 route.post('/books/:bookId/review',reviewCtrl.createReview)
 
-// route.put('/books/:bookId/review/:reviewId',reviewCtrl.createReview)
-// route.delete('/books/:bookId/review/:reviewId',reviewCtrl.createReview)
+route.put('/books/:bookId/review/:reviewId',reviewCtrl.updateReview)
+route.delete('/books/:bookId/review/:reviewId',reviewCtrl.deleteReview)
 
 route.all('/*' ,(req,res)=>{
   res.status(400).send({status: false , message:"invalid path"})

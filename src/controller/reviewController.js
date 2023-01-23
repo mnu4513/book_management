@@ -1,34 +1,74 @@
 const reviewModel = require("../model/reviewModel")
 const bookModel = require("../model/bookModel")
-
+const mongoose = require('mongoose')
+const validRating= /^[1-5](\.\d)?$/
+const regex = /^[a-zA-Z0-9% ]{3,60}$/
 
 exports.createReview = async function(req,res){
     try {
-        let data = req.params.bookId
-        let newReview = req.body
-        let {bookId,reviewedBy,reviewAt,rating,review,isDeleted} = newReview
-         if(bookId != data)return res.status(400).send({status: false , message:"book id not match"})
+
+        let id= req.params.bookId
+        let data = req.body
+
+        let {bookId,reviewedAt,rating,review} = data
 
         if(!bookId) return res.status(400).send({status:false, message:"Pls provide bookId"})
-        if(data){
-            let checkBookIdByRef = await bookModel.find({_id:bookId, isDeleted:false})
-            if(!checkBookIdByRef) return res.status(400).send({status:false, message:"No book exist with this Id"})
-        }
-
-        if(!reviewedBy) return res.status(400).send({status:false, message:"Pls provide reviewBy and name"})
-
-        if(!reviewAt) return res.status(400).send({status:false, message:"pls provide reviewAt key"})
+        if(bookId != id)return res.status(400).send({status: false , message:"book id not match"})
+        if(!reviewedAt) return res.status(400).send({status:false, message:"pls provide reviewAt "})     
+        if(!rating) return res.status(400).send({status:false, message:"Pls provide rating "})
         
-        if(!rating) return res.status(400).send({status:false, message:"Pls provide rating key, it is mandory to put.."})
-        if(rating){
-            rating++ 
-        }
+        if(!validRating.test(rating))return res.status(400).send({status: false , message :"rating invalid to use 1 to 5"})
+        if(!review.match(regex))return res.status(400).send({status: false , message :" review invalid "})
+      if(!data["reviewer's name"].match(regex))return res.status(400).send({status: false , message :"reviewer's name invalid"})
 
-        let addreview = await reviewModel.create(newReview)
-        res.status(201).send({status:true, message:"successful", data:addreview})
+        let obj = {bookId:bookId, reviewedBy:data["reviewer's name"] ,rating:rating,review:review,reviewedAt:reviewedAt }
+        let createReview = await reviewModel.create(obj)
+        await bookModel.findOneAndUpdate({_id :bookId},{$inc :{reviews:+1}},{new: true})
+        res.status(201).send({status:true, message:"successful", data:createReview})
 
     } catch (error) {
-        res.status(500).send({status:false, message:error.message})
+        res.status(500).send({status:false,message :"successful created", message:error.message})
     }
 }
 
+
+exports.updateReview = async (req,res)=>{
+  try{
+  let bookId = req.params.bookId
+  let reviewId = req.params.reviewId
+
+if(!mongoose.isValidObjectId(reviewId))return res.status(400).send({status: false , message :"review id is invalid"})
+
+let data= req.body
+let {review ,rating , reviewedBy} = data
+
+if(review){ if(!review.match(regex))return res.status(400).send({status: false , message :" review invalid "})}
+if(rating){ if(!validRating(rating))return res.status(400).send({status: false , message :"rating invalid to use 1 to 5"})}     
+if(reviewedBy){if(!reviewedBy.match(regex))return res.status(400).send({status:false , message:"reviewed invalid"})}   
+
+let update = await reviewModel.findOneAndUpdate({_id:reviewId,isDeleted: false},data,{new: true})
+if(!update)return res.status(404).send({status:false , message:" review id not found"})
+res.status(200).send({status:true,message :"successful update" ,data :update})
+}catch(err){
+  res.status(500).send({status:false,message: err.message})
+}
+}
+
+
+
+exports.deleteReview = async (req ,res)=>{
+  try{
+  let bookId  =  req.params.bookId
+  let ReviewId = req.params.reviewId
+  if(!mongoose.isValidObjectId(ReviewId))return res.status(400).send({status: false , message :"reviews id is invalid"})
+  let deleted = await reviewModel.findByIdAndUpdate({_id:ReviewId,isDeleted: false},{isDeleted: true},{new: true})
+  if(!deleted)return res.status(404).send({status: false , message :"review id not found"})
+  res.status(200).send({status:true,message :"successful deleted", data :deleted})
+  await bookModel.findOneAndUpdate({_id :bookId},{$inc :{reviews:-1}},{new: true})
+
+}catch(err){
+  res.status(500).send({status:false,message: err.message})
+}
+
+
+}
