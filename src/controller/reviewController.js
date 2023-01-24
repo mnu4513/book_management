@@ -3,6 +3,7 @@ const bookModel = require("../model/bookModel")
 const mongoose = require('mongoose')
 const validRating= /^[1-5](\.\d)?$/
 const regex = /^[a-zA-Z0-9% ]{3,60}$/
+const dateRegex = /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/
 
 exports.createReview = async function(req,res){
     try {
@@ -10,19 +11,26 @@ exports.createReview = async function(req,res){
         let id= req.params.bookId
         let data = req.body
 
-        let {bookId,reviewedAt,rating,review} = data
+        let {bookId,reviewedAt,review,rating} = data
 
         if(!bookId) return res.status(400).send({status:false, message:"Pls provide bookId"})
-        if(bookId != id)return res.status(400).send({status: false , message:"book id not match"})
-        if(!reviewedAt) return res.status(400).send({status:false, message:"pls provide reviewAt "})     
+        if(bookId != id)return res.status(400).send({status: false , message:"book id not match"})    
         if(!rating) return res.status(400).send({status:false, message:"Pls provide rating "})
         
+
         if(!validRating.test(rating))return res.status(400).send({status: false , message :"rating invalid to use 1 to 5"})
         if(!review.match(regex))return res.status(400).send({status: false , message :" review invalid "})
-      if(!data["reviewer's name"].match(regex))return res.status(400).send({status: false , message :"reviewer's name invalid"})
+        if(data["reviewer's name"]){
+      if(!data["reviewer's name"].match(regex))return res.status(400).send({status: false , message :"reviewer's name invalid"})}
+        
+      if(reviewedAt){if(!dateRegex.test(reviewedAt))return res.status(400).send({status: false ,message :"reviewedAt invalid like => YYYY-MM-DD"})}else{
+     reviewedAt =new Date()
+      }
 
         let obj = {bookId:bookId, reviewedBy:data["reviewer's name"] ,rating:rating,review:review,reviewedAt:reviewedAt }
+
         let createReview = await reviewModel.create(obj)
+
         await bookModel.findOneAndUpdate({_id :bookId},{$inc :{reviews:+1}},{new: true})
         res.status(201).send({status:true, message:"successful", data:createReview})
 
@@ -72,3 +80,5 @@ exports.deleteReview = async (req ,res)=>{
 
 
 }
+
+

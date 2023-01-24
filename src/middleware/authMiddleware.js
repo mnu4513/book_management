@@ -6,7 +6,7 @@ const { isValidObjectId } = require("mongoose")
 
 exports.authentication=async function(req,res,next){
     try{
-        let token=req.headers["x-auth-token"] || req.headers["x-Auth-token"]
+        let token=req.headers["x-api-key"] 
         if(!token) return res.status(400).send({status:false,message:"Missing authentication token"})
 
             jwt.verify(token,'key',(err , token)=>{
@@ -36,6 +36,7 @@ exports.authorization=async function(req,res,next){
         }
 
         if(userId){
+            if(!isValidObjectId(userId))return res.status(400).send("please Enter valid user Id")
            if(loginUser != userId)return res.status(403).send({status: false , message:"unAuthorization"})
            next()
         }

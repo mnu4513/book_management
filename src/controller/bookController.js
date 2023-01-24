@@ -1,9 +1,11 @@
 const userModel = require('../model/userModel')
 const bookModel = require('../model/bookModel')
+const reviewModel = require('../model/reviewModel')
+
 const mongoose = require('mongoose')
 const regex = /^[A-Za-z_? ]{3,30}$/
 const isbnRegex = /^(?=(?:\D*\d){10}(?:(?:\D*\d){3})?$)[\d-]+$/
-const dateRegex =/^(0?[1-9]|[12][0-9]|3[01])[\/\-](0?[1-9]|1[012])[\/\-]\d{4}$/
+const dateRegex =/([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/
 
 
 // ===============================POST API CREATE BOOK ...........................
@@ -22,27 +24,30 @@ exports.bookCreate = async (req,res)=>{
   if(!category)return res.status(400).send({status: false ,message:"category required"})
   if(!subcategory)return res.status(400).send({status: false ,message:"subCategory required"})
  
-  if(!mongoose.isValidObjectId(userId))return res.status(400).send({status: false , message :"id is not valid"})
+ 
   if(! title.match(regex))return res.status(400).send({status: false , message:"title invalid"})
   if(! excerpt.match(regex))return res.status(400).send({status: false , message:"excerpt invalid"})
   if(! category.match(regex))return res.status(400).send({status: false , message:"category invalid"})
   if(! subcategory.match(regex))return res.status(400).send({status: false , message:" subCategory invalid"})
   if(! ISBN.match(isbnRegex))return res.status(400).send({status: false , message:" ISBN invalid"})
-// if(releasedAt){
-//   if(! dateRegex.match(releasedAt))return res.status(400).send({status: false , message:" releasedAt invalid"})
-// }
+
+if(releasedAt){
+  if(!releasedAt.match(dateRegex))return res.status(400).send({status: false , message:" releasedAt invalid"})
+}else{
+  data.releasedAt =new Date() 
+}
 
 //  unique data 
 let findTitle = await bookModel.findOne({title :title})
-if(findTitle)return res.status(400).send({status: false, message :"title already exist our data base"})
+if(findTitle)return res.status(400).send({status: false, message :"title already exist in our data base"})
 let findIsbn = await bookModel.findOne({ISBN:ISBN})
-if(findIsbn)return res.status(400).send({status: false, message :"ISBN number already exist our data base"})
+if(findIsbn)return res.status(400).send({status: false, message :"ISBN number already exist in our data base"})
 
-  let findUser = await userModel.findById({_id:userId})
-  if(!findUser)return res.status(404).send({status: false , message :"user not exist our data base"})
+  // let findUser = await userModel.findById({_id:userId})
+  // if(!findUser)return res.status(404).send({status: false , message :"user not exist our data base"})
 
   let crateBook = await bookModel.create(data)
-  res.status(200).send({status: true , data : crateBook})
+  res.status(201).send({status: true , data : crateBook})
 
 }catch(err){
   res.status(500).send({status: false ,message :err.message})
@@ -55,7 +60,7 @@ exports.getBook = async (req ,res)=>{
   try{
   let query = req.query
   query.isDeleted = false
-console.log(query)
+
   if(query.userId){
     if(!mongoose.isValidObjectId(query.userId))return res.status(400).send({status: false , message :"id is not valid"}) }
 
@@ -72,10 +77,13 @@ console.log(query)
 exports.getBookId = async (req,res)=>{
  try{
   let id  = req.params.bookId
+
 if(!mongoose.isValidObjectId(id))return res.status(400).send({status: false , message :"id is not valid"})
 
-let findData = await bookModel.findById({_id: id,isDeleted : false})
+let findData = await bookModel.findById({_id: id,isDeleted : false}).lean()
 if(!findData)return res.status(404).send({status:false ,message : "this userId not exist in our data base"})
+let reviewFind = await reviewModel.find({bookId:findData._id,isDeleted:false})
+findData.reviewsData = reviewFind
 res.status(200).send({status: true ,data :findData})
 }catch(err){
   res.status(500).send({status: false ,message :err.message})
@@ -89,8 +97,6 @@ exports.updateBook = async (req ,res)=>{
    let id = req.params.bookId
    let body = req.body
    let {title ,ISBN ,excerpt,releasedAt}= body
-
-
 
 if(!mongoose.isValidObjectId(id))return res.status(400).send({status: false , message :"id is not valid"})
 
@@ -138,3 +144,4 @@ exports.bookDeleted = async (req ,res)=>{
     res.status(500).send({status:false , message: err.message})
   }
 }
+
