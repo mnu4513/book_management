@@ -150,7 +150,7 @@ exports.bookDeleted = async (req, res) => {
     
     let deletedBook = await bookModel.findOneAndUpdate({ _id: id, isDeleted: false },{isDeleted: true, deletedAt: new Date()}, { new: true });
     if (!deletedBook) return res.status(404).send({ status: false, message: "bookId is not exist in our data base" });
-    res.status(200).send({ status: false, data: deletedBook })
+    res.status(200).send({ status: false, message:"successful Deleted" })
 
   } catch (err) {
     res.status(500).send({ status: false, message: err.message })

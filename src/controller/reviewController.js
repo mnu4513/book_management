@@ -10,11 +10,11 @@ exports.createReview = async function(req,res){
 
         let id= req.params.bookId
         let data = req.body
-
+        if (!mongoose.isValidObjectId(id)) return res.status(400).send({ status: false, message: "bookId in param invalid" })
+        if (!mongoose.isValidObjectId(data.bookId)) return res.status(400).send({ status: false, message: "bookId in body invalid" })
         let {bookId,reviewedAt,review,rating} = data
 
-        if(!bookId) return res.status(400).send({status:false, message:"Pls provide bookId"})
-        if(bookId != id)return res.status(400).send({status: false , message:"book id not match"})    
+        if(!bookId) return res.status(400).send({status:false, message:"Pls provide bookId"})   
         if(!rating) return res.status(400).send({status:false, message:"Pls provide rating "})
         
 
@@ -26,12 +26,13 @@ exports.createReview = async function(req,res){
       if(reviewedAt){if(!dateRegex.test(reviewedAt))return res.status(400).send({status: false ,message :"reviewedAt invalid like => YYYY-MM-DD"})}else{
      reviewedAt =new Date()
       }
+        let bookIdFind=await bookModel.findById({_id:id, isDeleted:false})
+        if(!bookIdFind){return res.status(400).send({status:false,message:"bookId is not exist in database"})}
+        let obj = {bookId:id, reviewedBy:data["reviewer's name"] ,rating:rating,review:review,reviewedAt:reviewedAt }
 
-        let obj = {bookId:bookId, reviewedBy:data["reviewer's name"] ,rating:rating,review:review,reviewedAt:reviewedAt }
+        let createReview = await (await reviewModel.create(obj)).populate("bookId")
 
-        let createReview = await reviewModel.create(obj)
-
-        await bookModel.findOneAndUpdate({_id :bookId},{$inc :{reviews:+1}},{new: true})
+        await bookModel.findOneAndUpdate({_id :id},{$inc :{reviews:+1}},{new: true})
         res.status(201).send({status:true, message:"successful", data:createReview})
 
     } catch (error) {
@@ -42,19 +43,22 @@ exports.createReview = async function(req,res){
 
 exports.updateReview = async (req,res)=>{
   try{
-  let bookId = req.params.bookId
+  let id = req.params.bookId
   let reviewId = req.params.reviewId
 
 if(!mongoose.isValidObjectId(reviewId))return res.status(400).send({status: false , message :"review id is invalid"})
-
+if(!mongoose.isValidObjectId(id))return res.status(400).send({status: false , message :"Book id is invalid"})
 let data= req.body
 let {review ,rating , reviewedBy} = data
 
 if(review){ if(!review.match(regex))return res.status(400).send({status: false , message :" review invalid "})}
 if(rating){ if(!validRating(rating))return res.status(400).send({status: false , message :"rating invalid to use 1 to 5"})}     
-if(reviewedBy){if(!reviewedBy.match(regex))return res.status(400).send({status:false , message:"reviewed invalid"})}   
+if(reviewedBy){if(!reviewedBy.match(regex))return res.status(400).send({status:false , message:"reviewed invalid"})}  
 
-let update = await reviewModel.findOneAndUpdate({_id:reviewId,isDeleted: false},data,{new: true})
+let bookIdFind=await bookModel.findById({_id:id, isDeleted:false})
+if(!bookIdFind){return res.status(400).send({status:false,message:"bookId is not exist in database"})} 
+
+let update = await reviewModel.findOneAndUpdate({_id:reviewId,isDeleted: false},data,{new: true}).populate("bookId")
 if(!update)return res.status(404).send({status:false , message:" review id not found"})
 res.status(200).send({status:true,message :"successful update" ,data :update})
 }catch(err){
@@ -69,9 +73,13 @@ exports.deleteReview = async (req ,res)=>{
   let bookId  =  req.params.bookId
   let ReviewId = req.params.reviewId
   if(!mongoose.isValidObjectId(ReviewId))return res.status(400).send({status: false , message :"reviews id is invalid"})
+  if(!mongoose.isValidObjectId(bookId))return res.status(400).send({status: false , message :"Book id is invalid"})
+
+  let bookIdFind=await bookModel.findOne({_id:bookId, isDeleted:false})
+  if(!bookIdFind){return res.status(400).send({status:false,message:"bookId is not exist in database"})} 
   let deleted = await reviewModel.findByIdAndUpdate({_id:ReviewId,isDeleted: false},{isDeleted: true},{new: true})
   if(!deleted)return res.status(404).send({status: false , message :"review id not found"})
-  res.status(200).send({status:true,message :"successful deleted", data :deleted})
+  res.status(200).send({status:true,message :"successful deleted"})
   await bookModel.findOneAndUpdate({_id :bookId},{$inc :{reviews:-1}},{new: true})
 
 }catch(err){

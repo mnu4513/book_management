@@ -18,10 +18,10 @@ route.delete('/books/:bookId',authentication,authorization,bookCtrl.bookDeleted)
 
 // review api
 
-route.post('/books/:bookId/review',authentication,authorization,reviewCtrl.createReview)
+route.post('/books/:bookId/review',authentication,reviewCtrl.createReview)
 
-route.put('/books/:bookId/review/:reviewId',authentication,authorization,reviewCtrl.updateReview)
-route.delete('/books/:bookId/review/:reviewId',authentication,authorization,reviewCtrl.deleteReview)
+route.put('/books/:bookId/review/:reviewId',authentication,reviewCtrl.updateReview)
+route.delete('/books/:bookId/review/:reviewId',authentication,reviewCtrl.deleteReview)
 
 route.all('/*' ,(req,res)=>{
   res.status(400).send({status: false , message:"invalid path"})
