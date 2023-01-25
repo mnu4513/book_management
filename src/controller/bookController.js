@@ -5,150 +5,155 @@ const reviewModel = require('../model/reviewModel')
 const mongoose = require('mongoose')
 const regex = /^[A-Za-z_? ]{3,30}$/
 const isbnRegex = /^(?=(?:\D*\d){10}(?:(?:\D*\d){3})?$)[\d-]+$/
-const dateRegex =/([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/
+const dateRegex = /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/
 
 
 // ===============================POST API CREATE BOOK ...........................
 
-exports.bookCreate = async (req,res)=>{
-  try{
+exports.bookCreate = async (req, res) => {
+  try {
 
-  let data = req.body
-  let{title ,excerpt , userId , ISBN ,category,subcategory,releasedAt} = data
-  if(Object.keys(data).length =0)return res.status(400).send({status:false ,message :"body empty"})
+    let data = req.body
+    let { title, excerpt, userId, ISBN, category, subcategory, releasedAt } = data
+    if (Object.keys(data).length = 0) return res.status(400).send({ status: false, message: "body empty" })
 
-  if(!title ||title.trim()=="")return res.status(400).send({status: false ,message:"title required"})
-  if(!excerpt ||excerpt.trim()=="")return res.status(400).send({status: false ,message:"excerpt required"})
-  
-  if(!ISBN || ISBN.trim()=="")return res.status(400).send({status: false ,message:"ISBN required"})
-  if(!category || category.trim()=="")return res.status(400).send({status: false ,message:"category required"})
-  if(!subcategory ||subcategory.trim()=="")return res.status(400).send({status: false ,message:"subCategory required"})
- 
- 
-  if(! title.match(regex))return res.status(400).send({status: false , message:"title invalid"})
-  if(! excerpt.match(regex))return res.status(400).send({status: false , message:"excerpt invalid"})
-  if(! category.match(regex))return res.status(400).send({status: false , message:"category invalid"})
-  if(! subcategory.match(regex))return res.status(400).send({status: false , message:" subCategory invalid"})
-  if(! ISBN.match(isbnRegex))return res.status(400).send({status: false , message:" ISBN invalid"})
+    if (!title || title.trim() == "") return res.status(400).send({ status: false, message: "title required" })
+    if (!excerpt || excerpt.trim() == "") return res.status(400).send({ status: false, message: "excerpt required" })
 
-if(releasedAt){
-  if(!releasedAt.match(dateRegex))return res.status(400).send({status: false , message:" releasedAt invalid"})
-}else{
-  data.releasedAt =new Date() 
-}
+    if (!ISBN || ISBN.trim() == "") return res.status(400).send({ status: false, message: "ISBN required" })
+    if (!category || category.trim() == "") return res.status(400).send({ status: false, message: "category required" })
+    if (!subcategory || subcategory.trim() == "") return res.status(400).send({ status: false, message: "subCategory required" })
 
-//  unique data 
-let findTitle = await bookModel.findOne({title :title})
-if(findTitle)return res.status(400).send({status: false, message :"title already exist in our data base"})
-let findIsbn = await bookModel.findOne({ISBN:ISBN})
-if(findIsbn)return res.status(400).send({status: false, message :"ISBN number already exist in our data base"})
 
-  // let findUser = await userModel.findById({_id:userId})
-  // if(!findUser)return res.status(404).send({status: false , message :"user not exist our data base"})
+    if (!title.match(regex)) return res.status(400).send({ status: false, message: "title invalid" })
+    if (!excerpt.match(regex)) return res.status(400).send({ status: false, message: "excerpt invalid" })
+    if (!category.match(regex)) return res.status(400).send({ status: false, message: "category invalid" })
+    if (!subcategory.match(regex)) return res.status(400).send({ status: false, message: " subCategory invalid" })
+    if (!ISBN.match(isbnRegex)) return res.status(400).send({ status: false, message: " ISBN invalid" })
 
-  let crateBook = await bookModel.create(data)
-  res.status(201).send({status: true , data : crateBook})
+    if (releasedAt) {
+      if (!releasedAt.match(dateRegex)) return res.status(400).send({ status: false, message: " releasedAt invalid" })
+    } else {
+      data.releasedAt = new Date()
+    }
 
-}catch(err){
-  res.status(500).send({status: false ,message :err.message})
-}
+    //  unique data 
+    let findTitle = await bookModel.findOne({ title: title })
+    if (findTitle) return res.status(400).send({ status: false, message: "title already exist in our data base" })
+    let findIsbn = await bookModel.findOne({ ISBN: ISBN })
+    if (findIsbn) return res.status(400).send({ status: false, message: "ISBN number already exist in our data base" })
+
+    // let findUser = await userModel.findById({_id:userId})
+    // if(!findUser)return res.status(404).send({status: false , message :"user not exist our data base"})
+
+    let crateBook = await bookModel.create(data)
+    res.status(201).send({ status: true, data: crateBook })
+
+  } catch (err) {
+    res.status(500).send({ status: false, message: err.message })
+  }
 }
 
 // ===============================GET API  BOOK FIND BY FILTER ...........................
 
 
-exports.getBook = async (req ,res)=>{
-  try{
-  let query = req.query
-  
-  const {userId,category,subcategory} = query
-  
-  if(userId){
-    if(!mongoose.isValidObjectId(userId))return res.status(400).send({status: false , message :"id is not valid"}) }
-    let obj ={
-      userId:userId,category:category,subcategory:subcategory,isDeleted:false
+exports.getBook = async (req, res) => {
+  try {
+    let query = req.query
+    const obj1 = { userId, category, subcategory, ...rest } = query;
+    if (Object.keys(rest).length > 0) return res.status(400).send({ status: false, message: 'please enter valid filter, userId, category and subcategory' });
+
+    query.isDeleted = false;
+
+    if (query.userId) {
+      if (!mongoose.isValidObjectId(query.userId)) return res.status(400).send({ status: false, message: "id is not valid" })
     }
-    console.log(obj);
-  let findBook = await bookModel.find(obj).select({createdAt:0,ISBN:0,subcategory:0,isDeleted:0,updatedAt:0,__v:0})
-  if(findBook.length ==0)return res.status(404).send({status : true ,message: "not match query"})
-    res.status(200).send({status : true , data :findBook})
-  }catch(err){
-    res.status(500).send({status: false ,message :err.message})
+
+    let findBook = await bookModel.find(query).sort('title').select({ createdAt: 0, ISBN: 0, subcategory: 0, isDeleted: 0, updatedAt: 0, __v: 0 })
+    if (findBook.length == 0) return res.status(404).send({ status: true, message: "not match query" })
+    res.status(200).send({ status: true, data: findBook })
+  } catch (err) {
+    res.status(500).send({ status: false, message: err.message })
   }
 }
 
 // =============================== GET API  BOOK FIND BY ID ...........................
 
-exports.getBookId = async (req,res)=>{
- try{
-  let id  = req.params.bookId
+exports.getBookId = async (req, res) => {
+  try {
+    let id = req.params.bookId
 
-if(!mongoose.isValidObjectId(id))return res.status(400).send({status: false , message :"id is not valid"})
+    if (!mongoose.isValidObjectId(id)) return res.status(400).send({ status: false, message: "id is not valid" })
 
-let findData = await bookModel.findById({_id: id,isDeleted : false}).lean().select({ISBN:0,__v:0})
-if(!findData)return res.status(404).send({status:false ,message : "this userId not exist in our data base"})
-let reviewFind = await reviewModel.find({bookId:findData._id,isDeleted:false}).select({isDeleted:0,__v:0})
-findData.reviewsData = reviewFind
-res.status(200).send({status: true ,message:"Book List",data :findData})
-}catch(err){
-  res.status(500).send({status: false ,message :err.message})
-}
+    let findData = await bookModel.findById({ _id: id, isDeleted: false }).lean().select({ ISBN: 0, __v: 0 })
+    if (!findData) return res.status(404).send({ status: false, message: "this bookId not exist in our data base" })
+    let reviewFind = await reviewModel.find({ bookId: findData._id, isDeleted: false }).select({ isDeleted: 0, __v: 0 })
+    findData.reviewsData = reviewFind
+    res.status(200).send({ status: true, message: "Book List", data: findData })
+  } catch (err) {
+    res.status(500).send({ status: false, message: err.message })
+  }
 }
 
 // =============================== PUT  API  BOOK UPDATE ...........................
 
-exports.updateBook = async (req ,res)=>{
-  try{
-   let id = req.params.bookId
-   let body = req.body
-   let {title ,ISBN ,excerpt,releasedAt}= body
+exports.updateBook = async (req, res) => {
+  try {
+    let id = req.params.bookId
+    let body = req.body
+
+    if (Object.keys(body).length == 0) return res.status(400).send({ status: false, message: 'please enter some details to update' });
+    let { title, ISBN, excerpt, releasedAt, ...rest } = body
+
+    if (Object.keys(rest).length > 0) return res.status(400).send({ status: false, message: 'please enter valid details to update, title ,ISBN ,excerpt,releasedAt' });
 
 
-if(title ||title==""){ 
-  // if(title.trim().length==0)return res.status(400).send({status: false ,message:"title required"})
-  if(!title.trim().match(regex))return res.status(400).send({status: false , message:"title invalid"})}
+    if (title || title == "") {
+      if (!title.trim().match(regex)) return res.status(400).send({ status: false, message: "title invalid" })
+    }
 
-if(excerpt ||excerpt==""){ if(!excerpt.trim().match(regex))return res.status(400).send({status: false , message:"excerpt invalid"})}
-if(ISBN ||ISBN==""){ if(!ISBN.trim().match(isbnRegex))return res.status(400).send({status: false , message:" ISBN invalid"})}
-if(releasedAt || releasedAt==""){ if(! dateRegex.trim().match(releasedAt))return res.status(400).send({status: false , message:" releasedAt invalid"})}
+    if (excerpt || excerpt == "") { if (!excerpt.trim().match(regex)) return res.status(400).send({ status: false, message: "excerpt invalid" }) }
+    if (ISBN || ISBN == "") { if (!ISBN.trim().match(isbnRegex)) return res.status(400).send({ status: false, message: " ISBN invalid" }) }
+    if (releasedAt || releasedAt == "") { if (!releasedAt.trim().match(dateRegex)) return res.status(400).send({ status: false, message: " releasedAt invalid" }) }
 
-// UNIQUE  TITLE AND ISBN NUMBER 
-if(title){
-let findTitle = await bookModel.findOne({title :title})
-if(findTitle)return res.status(400).send({status: false, message :"title already exist our data base"})}
-if(ISBN){
-let findIsbn = await bookModel.findOne({ISBN:ISBN})
-if(findIsbn)return res.status(400).send({status: false, message :"ISBN number already exist our data base"})
-}
-//  NEW OBJECT FOR FIND AND UPDATE QUERY
+    // UNIQUE  TITLE AND ISBN NUMBER 
+    if (title) {
+      let findTitle = await bookModel.findOne({ title: title })
+      if (findTitle) return res.status(400).send({ status: false, message: "title already exist our data base" })
+    }
+    if (ISBN) {
+      let findIsbn = await bookModel.findOne({ ISBN: ISBN })
+      if (findIsbn) return res.status(400).send({ status: false, message: "ISBN number already exist our data base" })
+    }
+    //  NEW OBJECT FOR FIND AND UPDATE QUERY
 
-let findObj ={id:id , isDeleted: false}
-let data ={ title:title,excerpt:excerpt, ISBN:ISBN,releasedAt:releasedAt}
+    let findObj = { id: id, isDeleted: false }
+    let data = { title: title, excerpt: excerpt, ISBN: ISBN, releasedAt: releasedAt }
+console.log(data);
+    // UPDATE OBJECT
 
-// UPDATE OBJECT
+    let updateBook = await bookModel.findOneAndUpdate(findObj, data, { new: true })
+    if (!updateBook) return res.status(404).send({ status: false, message: "bookID not exist in our data base" })
+    res.status(200).send({ status: true, data: updateBook })
 
-let updateBook = await bookModel.findOneAndUpdate(findObj ,data,{new: true})
-if(!updateBook)return res.status(404).send({status: false ,message :"bookID not exist in our data base"})
-res.status(200).send({status: true,data :updateBook})
-
-  }catch(err){
-  res.status(500).send({status: false ,message :err.message})
-}
+  } catch (err) {
+    res.status(500).send({ status: false, message: err.message })
+  }
 }
 
 // =============================== DELETED API  BOOK BY ID ...........................
 
-exports.bookDeleted = async (req ,res)=>{
-  try{
-    let id= req.params.bookId
-    if(!mongoose.isValidObjectId(id))return res.status(400).send({status: false , message :"id is not valid"})
+exports.bookDeleted = async (req, res) => {
+  try {
+    let id = req.params.bookId
     
-    let deletedBook = await bookModel.findOneAndDelete({_id:id ,isDeleted :false},{new : true})
-    if(!deletedBook)return res.status(404).send({status: false  , message:"bookId is not exist in our data base"})
-    res.status(200).send({status: false , data :deletedBook})
+    
+    let deletedBook = await bookModel.findOneAndUpdate({ _id: id, isDeleted: false },{isDeleted: true, deletedAt: new Date()}, { new: true });
+    if (!deletedBook) return res.status(404).send({ status: false, message: "bookId is not exist in our data base" });
+    res.status(200).send({ status: false, data: deletedBook })
 
-  }catch(err){
-    res.status(500).send({status:false , message: err.message})
+  } catch (err) {
+    res.status(500).send({ status: false, message: err.message })
   }
 }
 
