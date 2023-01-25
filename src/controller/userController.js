@@ -24,18 +24,18 @@ exports.createUser = async function (req, res) {
 
         const { title, name, phone, email, password, address } = data;
 
-        if (!title) return res.status(400).send({ status: false, message: 'title is required to register a user' });
+        if (!title || title.trim()=="") return res.status(400).send({ status: false, message: 'title is required to register a user' });
         if (!['Mr', 'Mrs', 'Miss'].includes(title)) return res.status(400).send({ status: false, message: 'please enter a valid title for user' });
-        if (!name) return res.status(400).send({ status: false, message: 'name is required to register a user' });
+        if (!name ||name.trim()=="") return res.status(400).send({ status: false, message: 'name is required to register a user' });
         if (!validName(name)) return res.status(400).send({ status: false, message: 'please enter a valid name to register a user' });
         if (!phone) return res.status(400).send({ status: false, message: 'phone is required to register a user' });
         if (!validNumber(phone)) return res.status(400).send({ status: false, message: 'please enter a valid indian phone number to register a user' });
-        if (!email) return res.status(400).send({ status: false, message: 'email is required to register a use' });
+        if (!email || email.trim()=="") return res.status(400).send({ status: false, message: 'email is required to register a use' });
         if (!validMail(email)) return res.status(400).send({ status: false, message: 'please enter a valid email to register a user' });
-        if (!password) return res.status(400).send({ status: false, message: 'password is required to register a user' });
+        if (!password || password.trim()=="") return res.status(400).send({ status: false, message: 'password is required to register a user' });
         if (!validPassword.validate(password)) return res.status(400).send({ status: false, message: 'please choose a strong password' });
         if (address) {
-            if (typeof address != 'object') return res.status(400).send({ status: false, message: 'please enter address in a valid format' });
+            if (typeof address != 'object' || Object.keys(address).length ==0) return res.status(400).send({ status: false, message: 'please enter address in a valid format' });
             const street = address.street;
             const city = address.city;
             const pincode = address.pincode;
@@ -52,9 +52,9 @@ exports.createUser = async function (req, res) {
            
         let user = {};
         user = await userModel.findOne({ phone: phone });
-        if (user) return res.status(400).send({ status: false, message: 'phone number is already in user, please enter a unique phone number' });
+        if (user) return res.status(400).send({ status: false, message: 'Phone already exist,use different number' });
         user = await userModel.findOne({ email: email });
-        if (user) return res.status(400).send({ status: false, message: 'email is already in user, please enter a unique email' });
+        if (user) return res.status(400).send({ status: false, message: 'email already exist,use different email' });
 
         const userCreated = await userModel.create(data);
         res.status(201).send({ status: true, message: "successful creation ", data: userCreated });

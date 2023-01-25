@@ -24,22 +24,26 @@ exports.authentication=async function(req,res,next){
 exports.authorization=async function(req,res,next){
     try{
        let loginUser=req.id
-      let BookId=req.params.BookId
+      let BookId=req.params.bookId
       let userId = req.body.userId
        
       if(BookId){
-       if(!isValidObjectId(BookId))return res.status(400).send("please Enter valid Object Id")
+       if(!isValidObjectId(BookId))return res.status(400).send({status:false,message:"please Enter valid Object Id"})
          let findId=await bookModel.findOne({_id:BookId ,isDeleted :false})
          if(!findId) return res.status(404).send({status: false,message:"Book Data not found"})
          if(loginUser != findId.userId)return res.status(403).send({status: false ,message : "unAuthorization"})
+         
          next()
         }
+        else{
+        if(!userId ||userId.trim()=="")return res.status(400).send({status: false ,message:"userId required"})
 
         if(userId){
-            if(!isValidObjectId(userId))return res.status(400).send("please Enter valid user Id")
+            if(!isValidObjectId(userId))return res.status(400).send({status:false,message:"please Enter valid user Id"})
+
            if(loginUser != userId)return res.status(403).send({status: false , message:"unAuthorization"})
            next()
-        }
+        }}
 
     }catch(err){
         return res.status(500).send({status:false,message:err.message})

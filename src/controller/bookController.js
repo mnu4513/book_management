@@ -17,12 +17,12 @@ exports.bookCreate = async (req,res)=>{
   let{title ,excerpt , userId , ISBN ,category,subcategory,releasedAt} = data
   if(Object.keys(data).length =0)return res.status(400).send({status:false ,message :"body empty"})
 
-  if(!title)return res.status(400).send({status: false ,message:"title required"})
-  if(!excerpt)return res.status(400).send({status: false ,message:"excerpt required"})
-  if(!userId)return res.status(400).send({status: false ,message:"userId required"})
-  if(!ISBN)return res.status(400).send({status: false ,message:"ISBN required"})
-  if(!category)return res.status(400).send({status: false ,message:"category required"})
-  if(!subcategory)return res.status(400).send({status: false ,message:"subCategory required"})
+  if(!title ||title.trim()=="")return res.status(400).send({status: false ,message:"title required"})
+  if(!excerpt ||excerpt.trim()=="")return res.status(400).send({status: false ,message:"excerpt required"})
+  
+  if(!ISBN || ISBN.trim()=="")return res.status(400).send({status: false ,message:"ISBN required"})
+  if(!category || category.trim()=="")return res.status(400).send({status: false ,message:"category required"})
+  if(!subcategory ||subcategory.trim()=="")return res.status(400).send({status: false ,message:"subCategory required"})
  
  
   if(! title.match(regex))return res.status(400).send({status: false , message:"title invalid"})
@@ -56,15 +56,20 @@ if(findIsbn)return res.status(400).send({status: false, message :"ISBN number al
 
 // ===============================GET API  BOOK FIND BY FILTER ...........................
 
+
 exports.getBook = async (req ,res)=>{
   try{
   let query = req.query
-  query.isDeleted = false
-
-  if(query.userId){
-    if(!mongoose.isValidObjectId(query.userId))return res.status(400).send({status: false , message :"id is not valid"}) }
-
-  let findBook = await bookModel.find(query)
+  
+  const {userId,category,subcategory} = query
+  
+  if(userId){
+    if(!mongoose.isValidObjectId(userId))return res.status(400).send({status: false , message :"id is not valid"}) }
+    let obj ={
+      userId:userId,category:category,subcategory:subcategory,isDeleted:false
+    }
+    console.log(obj);
+  let findBook = await bookModel.find(obj).select({createdAt:0,ISBN:0,subcategory:0,isDeleted:0,updatedAt:0,__v:0})
   if(findBook.length ==0)return res.status(404).send({status : true ,message: "not match query"})
     res.status(200).send({status : true , data :findBook})
   }catch(err){
@@ -80,11 +85,11 @@ exports.getBookId = async (req,res)=>{
 
 if(!mongoose.isValidObjectId(id))return res.status(400).send({status: false , message :"id is not valid"})
 
-let findData = await bookModel.findById({_id: id,isDeleted : false}).lean()
+let findData = await bookModel.findById({_id: id,isDeleted : false}).lean().select({ISBN:0,__v:0})
 if(!findData)return res.status(404).send({status:false ,message : "this userId not exist in our data base"})
-let reviewFind = await reviewModel.find({bookId:findData._id,isDeleted:false})
+let reviewFind = await reviewModel.find({bookId:findData._id,isDeleted:false}).select({isDeleted:0,__v:0})
 findData.reviewsData = reviewFind
-res.status(200).send({status: true ,data :findData})
+res.status(200).send({status: true ,message:"Book List",data :findData})
 }catch(err){
   res.status(500).send({status: false ,message :err.message})
 }
@@ -98,12 +103,14 @@ exports.updateBook = async (req ,res)=>{
    let body = req.body
    let {title ,ISBN ,excerpt,releasedAt}= body
 
-if(!mongoose.isValidObjectId(id))return res.status(400).send({status: false , message :"id is not valid"})
 
-if(title){ if(!title.match(regex))return res.status(400).send({status: false , message:"title invalid"})}
-if(excerpt){ if(!excerpt.match(regex))return res.status(400).send({status: false , message:"excerpt invalid"})}
-if(ISBN){ if(!ISBN.match(isbnRegex))return res.status(400).send({status: false , message:" subCategory invalid"})}
-if(releasedAt){ if(! dateRegex.match(releasedAt))return res.status(400).send({status: false , message:" releasedAt invalid"})}
+if(title ||title==""){ 
+  // if(title.trim().length==0)return res.status(400).send({status: false ,message:"title required"})
+  if(!title.trim().match(regex))return res.status(400).send({status: false , message:"title invalid"})}
+
+if(excerpt ||excerpt==""){ if(!excerpt.trim().match(regex))return res.status(400).send({status: false , message:"excerpt invalid"})}
+if(ISBN ||ISBN==""){ if(!ISBN.trim().match(isbnRegex))return res.status(400).send({status: false , message:" ISBN invalid"})}
+if(releasedAt || releasedAt==""){ if(! dateRegex.trim().match(releasedAt))return res.status(400).send({status: false , message:" releasedAt invalid"})}
 
 // UNIQUE  TITLE AND ISBN NUMBER 
 if(title){
@@ -116,7 +123,7 @@ if(findIsbn)return res.status(400).send({status: false, message :"ISBN number al
 //  NEW OBJECT FOR FIND AND UPDATE QUERY
 
 let findObj ={id:id , isDeleted: false}
-let data ={ title:title,excerpt:excerpt, ISBN:ISBN}
+let data ={ title:title,excerpt:excerpt, ISBN:ISBN,releasedAt:releasedAt}
 
 // UPDATE OBJECT
 
