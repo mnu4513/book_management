@@ -10,8 +10,8 @@ exports.createReview = async function(req,res){
 
         let id= req.params.bookId
         let data = req.body
-        if (!mongoose.isValidObjectId(id)) return res.status(400).send({ status: false, message: "bookId in param invalid" })
-        if (!mongoose.isValidObjectId(data.bookId)) return res.status(400).send({ status: false, message: "bookId in body invalid" })
+        if (!mongoose.isValidObjectId(id)) return res.status(400).send({ status: false, message: "bookId is  invalid" })
+        // if (!mongoose.isValidObjectId(data.bookId)) return res.status(400).send({ status: false, message: "bookId in body invalid" })
         let {bookId,reviewedAt,review,rating} = data
 
         if(!bookId) return res.status(400).send({status:false, message:"Pls provide bookId"})   
@@ -56,7 +56,7 @@ if(rating){ if(!validRating(rating))return res.status(400).send({status: false ,
 if(reviewedBy){if(!reviewedBy.match(regex))return res.status(400).send({status:false , message:"reviewed invalid"})}  
 
 let bookIdFind=await bookModel.findById({_id:id, isDeleted:false})
-if(!bookIdFind){return res.status(400).send({status:false,message:"bookId is not exist in database"})} 
+if(!bookIdFind){return res.status(400).send({status:false,message:"No book present with this ID"})} 
 
 let update = await reviewModel.findOneAndUpdate({_id:reviewId,isDeleted: false},data,{new: true}).populate("bookId")
 if(!update)return res.status(404).send({status:false , message:" review id not found"})
