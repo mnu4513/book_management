@@ -127,9 +127,8 @@ exports.updateBook = async (req, res) => {
     }
     //  NEW OBJECT FOR FIND AND UPDATE QUERY
 
-    let findObj = { id: id, isDeleted: false }
+    let findObj = { _id: id, isDeleted: false }
     let data = { title: title, excerpt: excerpt, ISBN: ISBN, releasedAt: releasedAt }
-console.log(data);
     // UPDATE OBJECT
 
     let updateBook = await bookModel.findOneAndUpdate(findObj, data, { new: true })
@@ -146,8 +145,7 @@ console.log(data);
 exports.bookDeleted = async (req, res) => {
   try {
     let id = req.params.bookId
-    
-    
+   
     let deletedBook = await bookModel.findOneAndUpdate({ _id: id, isDeleted: false },{isDeleted: true, deletedAt: new Date()}, { new: true });
     if (!deletedBook) return res.status(404).send({ status: false, message: "bookId is not exist in our data base" });
     res.status(200).send({ status: false, message:"successful Deleted" })

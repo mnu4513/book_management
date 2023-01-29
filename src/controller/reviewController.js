@@ -11,10 +11,9 @@ exports.createReview = async function(req,res){
         let id= req.params.bookId
         let data = req.body
         if (!mongoose.isValidObjectId(id)) return res.status(400).send({ status: false, message: "bookId is  invalid" })
-        // if (!mongoose.isValidObjectId(data.bookId)) return res.status(400).send({ status: false, message: "bookId in body invalid" })
-        let {bookId,reviewedAt,review,rating} = data
-
-        if(!bookId) return res.status(400).send({status:false, message:"Pls provide bookId"})   
+        
+        let {reviewedAt,review,rating} = data
+ 
         if(!rating) return res.status(400).send({status:false, message:"Pls provide rating "})
         
 
@@ -28,6 +27,7 @@ exports.createReview = async function(req,res){
       }
         let bookIdFind=await bookModel.findById({_id:id, isDeleted:false})
         if(!bookIdFind){return res.status(400).send({status:false,message:"bookId is not exist in database"})}
+        
         let obj = {bookId:id, reviewedBy:data["reviewer's name"] ,rating:rating,review:review,reviewedAt:reviewedAt }
 
         let createReview = await (await reviewModel.create(obj)).populate("bookId")
@@ -52,7 +52,7 @@ let data= req.body
 let {review ,rating , reviewedBy} = data
 
 if(review){ if(!review.match(regex))return res.status(400).send({status: false , message :" review invalid "})}
-if(rating){ if(!validRating(rating))return res.status(400).send({status: false , message :"rating invalid to use 1 to 5"})}     
+if(rating){ if(!validRating.test(rating))return res.status(400).send({status: false , message :"rating invalid to use 1 to 5"})}     
 if(reviewedBy){if(!reviewedBy.match(regex))return res.status(400).send({status:false , message:"reviewed invalid"})}  
 
 let bookIdFind=await bookModel.findById({_id:id, isDeleted:false})
