@@ -43,11 +43,9 @@ exports.bookCreate = async (req, res) => {
     let findIsbn = await bookModel.findOne({ ISBN: ISBN })
     if (findIsbn) return res.status(400).send({ status: false, message: "ISBN number already exist in our data base" })
 
-    // let findUser = await userModel.findById({_id:userId})
-    // if(!findUser)return res.status(404).send({status: false , message :"user not exist our data base"})
 
     let crateBook = await bookModel.create(data)
-    res.status(201).send({ status: true, data: crateBook })
+    res.status(201).send({ status: true, message :"successful created",data: crateBook })
 
   } catch (err) {
     res.status(500).send({ status: false, message: err.message })
@@ -70,7 +68,7 @@ exports.getBook = async (req, res) => {
     }
 
     let findBook = await bookModel.find(query).sort('title').select({ createdAt: 0, ISBN: 0, subcategory: 0, isDeleted: 0, updatedAt: 0, __v: 0 })
-    if (findBook.length == 0) return res.status(404).send({ status: true, message: "not match query" })
+    if (findBook.length == 0) return res.status(404).send({ status: true,message :"successful get data ", message: "not match query" })
     res.status(200).send({ status: true, data: findBook })
   } catch (err) {
     res.status(500).send({ status: false, message: err.message })
@@ -89,7 +87,7 @@ exports.getBookId = async (req, res) => {
     if (!findData) return res.status(404).send({ status: false, message: "this bookId not exist in our data base" })
     let reviewFind = await reviewModel.find({ bookId: findData._id, isDeleted: false }).select({ isDeleted: 0, __v: 0 })
     findData.reviewsData = reviewFind
-    res.status(200).send({ status: true, message: "Book List", data: findData })
+    res.status(200).send({ status: true, message :"successful book and review", data: findData })
   } catch (err) {
     res.status(500).send({ status: false, message: err.message })
   }
@@ -133,7 +131,7 @@ exports.updateBook = async (req, res) => {
 
     let updateBook = await bookModel.findOneAndUpdate(findObj, data, { new: true })
     if (!updateBook) return res.status(404).send({ status: false, message: "bookID not exist in our data base" })
-    res.status(200).send({ status: true, data: updateBook })
+    res.status(200).send({ status: true,message :"successful update", data: updateBook })
 
   } catch (err) {
     res.status(500).send({ status: false, message: err.message })
@@ -145,7 +143,7 @@ exports.updateBook = async (req, res) => {
 exports.bookDeleted = async (req, res) => {
   try {
     let id = req.params.bookId
-   
+
     let deletedBook = await bookModel.findOneAndUpdate({ _id: id, isDeleted: false },{isDeleted: true, deletedAt: new Date()}, { new: true });
     if (!deletedBook) return res.status(404).send({ status: false, message: "bookId is not exist in our data base" });
     res.status(200).send({ status: false, message:"successful Deleted" })

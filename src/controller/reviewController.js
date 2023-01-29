@@ -25,12 +25,12 @@ exports.createReview = async function(req,res){
       if(reviewedAt){if(!dateRegex.test(reviewedAt))return res.status(400).send({status: false ,message :"reviewedAt invalid like => YYYY-MM-DD"})}else{
      reviewedAt =new Date()
       }
-        let bookIdFind=await bookModel.findById({_id:id, isDeleted:false})
+        let bookIdFind=await bookModel.findOne({_id:id, isDeleted:false})
         if(!bookIdFind){return res.status(400).send({status:false,message:"bookId is not exist in database"})}
         
         let obj = {bookId:id, reviewedBy:data["reviewer's name"] ,rating:rating,review:review,reviewedAt:reviewedAt }
 
-        let createReview = await (await reviewModel.create(obj)).populate("bookId")
+        let createReview = await(await reviewModel.create(obj)).populate("bookId")
 
         await bookModel.findOneAndUpdate({_id :id},{$inc :{reviews:+1}},{new: true})
         res.status(201).send({status:true, message:"successful", data:createReview})
@@ -61,6 +61,7 @@ if(!bookIdFind){return res.status(400).send({status:false,message:"No book prese
 let update = await reviewModel.findOneAndUpdate({_id:reviewId,isDeleted: false},data,{new: true}).populate("bookId")
 if(!update)return res.status(404).send({status:false , message:" review id not found"})
 res.status(200).send({status:true,message :"successful update" ,data :update})
+
 }catch(err){
   res.status(500).send({status:false,message: err.message})
 }
@@ -77,7 +78,7 @@ exports.deleteReview = async (req ,res)=>{
 
   let bookIdFind=await bookModel.findOne({_id:bookId, isDeleted:false})
   if(!bookIdFind){return res.status(400).send({status:false,message:"bookId is not exist in database"})} 
-  let deleted = await reviewModel.findByIdAndUpdate({_id:ReviewId,isDeleted: false},{isDeleted: true},{new: true})
+  let deleted = await reviewModel.findOneAndUpdate({_id:ReviewId,isDeleted: false},{isDeleted: true},{new: true})
   if(!deleted)return res.status(404).send({status: false , message :"review id not found"})
   res.status(200).send({status:true,message :"successful deleted"})
   await bookModel.findOneAndUpdate({_id :bookId},{$inc :{reviews:-1}},{new: true})
@@ -85,7 +86,6 @@ exports.deleteReview = async (req ,res)=>{
 }catch(err){
   res.status(500).send({status:false,message: err.message})
 }
-
 
 }
 
